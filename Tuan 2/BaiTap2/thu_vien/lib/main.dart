@@ -229,6 +229,16 @@ class StaffListScreen extends StatefulWidget {
 
 class _StaffListScreenState extends State<StaffListScreen> {
   List<String> staffMembers = ["Nguyen Van A", "Tran Thi B", "Le Van C"];
+  TextEditingController _controller = TextEditingController();
+
+  void _addStaff() {
+    if (_controller.text.isNotEmpty) {
+      setState(() {
+        staffMembers.add(_controller.text);
+        _controller.clear();
+      });
+    }
+  }
 
   void _removeStaff(int index) {
     setState(() {
@@ -236,24 +246,52 @@ class _StaffListScreenState extends State<StaffListScreen> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Danh sách Nhân viên')),
-      body: ListView.builder(
-        itemCount: staffMembers.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(staffMembers[index]),
-            trailing: IconButton(
-              icon: Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _removeStaff(index),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: "Nhập tên nhân viên",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _addStaff,
+                  child: Text("Thêm"),
+                ),
+              ],
             ),
-          );
-        },
+            SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                itemCount: staffMembers.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(staffMembers[index]),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _removeStaff(index),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
 
