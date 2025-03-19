@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      color: Colors.grey[100],
       title: "Flutter API",
       debugShowCheckedModeBanner: false,
       home: Homepage(),
@@ -27,15 +28,31 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   late Future<List<dynamic>> futureUTH;
+  List<bool> checkboxValues = [];
+
   @override
   void initState() {
     super.initState();
     futureUTH = fetchUTH();
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Flutter API")),
+      appBar: AppBar(
+        leading: Image.asset("assets/images/Logo.png"),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "SmartTasks",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue),
+            ),
+            Text('A simple and efficient to-do app', style: TextStyle(fontSize: 12, color: Colors.blue)),
+          ],
+        ),
+        actions: [Image.asset("assets/images/bell.png")],
+      ),
       body: FutureBuilder<List<dynamic>>(
         future: futureUTH,
         builder: (context, snapshot) {
@@ -47,34 +64,65 @@ class _HomepageState extends State<Homepage> {
             final uth = snapshot.data ?? [];
             if (uth.isEmpty) return Sleep();
 
+            // Khởi tạo danh sách checkbox nếu chưa có dữ liệu
+            if (checkboxValues.length != uth.length) {
+              checkboxValues = List.generate(uth.length, (index) => uth[index]['status'] == 'Completed');
+            }
+
             return ListView.builder(
               itemCount: uth.length,
               itemBuilder: (context, index) {
                 return Container(
-                  margin: EdgeInsets.only(bottom: 10, right: 20, left: 20),
+                  margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                   decoration: BoxDecoration(
-                    color:
-                        uth[index]['status'] == 'In Progress'
-                            ? Colors.blue[200]
-                            : uth[index]['status'] == "Completed"
-                            ? const Color.fromARGB(255, 129, 234, 133)
-                            : const Color.fromARGB(255, 202, 84, 75),
+                    color: uth[index]['status'] == 'In Progress'
+                        ? Colors.blue[200]
+                        : uth[index]['status'] == "Completed"
+                            ? Color.fromARGB(255, 129, 234, 133)
+                            : Color.fromARGB(255, 202, 84, 75),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: ListTile(
-                    title: Text(uth[index]['title'] ?? 'No Title'),
-                    subtitle: Text(
-                      uth[index]['description'] ?? 'No Description',
-                    ),
-                    trailing: Icon(Icons.arrow_forward_ios_rounded),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DetailPage(data: uth[index]),
+                  child: Column(
+                    children: [
+                      CheckboxListTile(
+                        title: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => DetailPage(data: uth[index])),
+                            );
+                          },
+                          child: Text(uth[index]['title'] ?? 'No Title'),
                         ),
-                      );
-                    },
+                        subtitle: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => DetailPage(data: uth[index])),
+                            );
+                          },
+                          child: Text(uth[index]['description'] ?? 'No Description'),
+                        ),
+                        value: checkboxValues[index],
+                        onChanged: (value) {
+                          setState(() {
+                            checkboxValues[index] = value ?? false;
+                          });
+                        },
+                        secondary: Icon(Icons.arrow_forward_ios_rounded),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                      Container(
+                        margin: EdgeInsets.all(10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Status: ${uth[index]['status']}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text("${uth[index]['dueDate']}", style: TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -82,6 +130,47 @@ class _HomepageState extends State<Homepage> {
           }
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        shape: CircleBorder(),
+        backgroundColor: Colors.blue,
+        child: Icon(Icons.add),
+        onPressed: () {
+          
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: ClipRRect(
+        borderRadius: BorderRadius.circular(60.0),
+        child: BottomAppBar(
+          height: 40.0,
+          elevation: 20.0,
+          notchMargin: 4.0,
+          shape:CircularNotchedRectangle(),
+          child: Container(
+            height: 30,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(Icons.home, 0),
+                _buildNavItem(Icons.calendar_today, 1),
+                SizedBox(width: 40), // Khoảng trống cho FAB
+                _buildNavItem(Icons.insert_drive_file, 2),
+                _buildNavItem(Icons.settings, 3),
+        
+              ],
+            )
+          ),
+        ),
+      ),
+      
+    );
+  }
+  Widget _buildNavItem(IconData icon, int index) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.blue),
+      onPressed: () {
+        
+      },
     );
   }
 }
@@ -109,6 +198,9 @@ class Sleep extends StatelessWidget {
     );
   }
 }
+
+
+
 
 class DetailPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -165,13 +257,17 @@ class _DetailPageState extends State<DetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.data['title'] ?? 'No Title', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),),
+            Text(
+              widget.data['title'] ?? 'No Title',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             Text(
               widget.data['description'] ?? 'No Description',
-              style: TextStyle(fontSize: 18),
+              style: TextStyle(fontSize: 15),
             ),
             SizedBox(height: 10),
             Container(
+              height: 80,
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.pink[100],
@@ -212,7 +308,7 @@ class _DetailPageState extends State<DetailPage> {
                     final bool checkbox =
                         subtasks[index]['isCompleted'] ??
                         false; // Đảm bảo là bool
-                
+
                     return Container(
                       margin: EdgeInsets.only(bottom: 10),
                       padding: EdgeInsets.all(10),
@@ -222,7 +318,7 @@ class _DetailPageState extends State<DetailPage> {
                       ),
                       child: CheckboxListTile(
                         value: checkbox,
-                
+
                         title: Text(subtasks[index]['title'] ?? 'No Title'),
                         subtitle: Text(
                           subtasks[index]['description'] ?? 'No Description',
@@ -244,7 +340,7 @@ class _DetailPageState extends State<DetailPage> {
                   },
                 )
                 : Text("No Subtasks"),
-            
+
             Text(
               "Attachments",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -255,10 +351,10 @@ class _DetailPageState extends State<DetailPage> {
                   shrinkWrap: true,
                   itemCount: attachs.length,
                   itemBuilder: (context, index) {
-                    final bool checkbox =
-                        attachs[index]['isCompleted'] ??
-                        false; // Đảm bảo là bool
-                
+//                     final bool checkbox =
+                        // attachs[index]['isCompleted'] ??
+//                         false; // Đảm bảo là bool
+
                     return Container(
                       margin: EdgeInsets.only(bottom: 10),
                       padding: EdgeInsets.all(10),
@@ -266,10 +362,12 @@ class _DetailPageState extends State<DetailPage> {
                         color: Colors.grey[300], // Màu nền xám nhạt
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: CheckboxListTile(
-                        value: checkbox,
-                
-                        title: Text(attachs[index]['title'] ?? 'No Title'),
+                      child: ListTile(
+                        // value: checkbox,
+                        leading: IconButton(onPressed: () {
+                          
+                        }, icon: Icon(Icons.attach_file)),
+                        title: Text(attachs[index]['fileName'] ?? 'No Title'),
                         subtitle: Text(
                           attachs[index]['description'] ?? 'No Description',
                         ),
@@ -278,13 +376,15 @@ class _DetailPageState extends State<DetailPage> {
                         //     : attachs[index]['status'] == "Completed"
                         //         ? Icon(Icons.check_circle_rounded)
                         //         : Icon(Icons.error_rounded),
-                        onChanged: (bool? value) {
-                          setState(() {
-                            attachs[index]['isCompleted'] =
-                                value ?? false; // Cập nhật giá trị
-                          });
-                        },
-                        controlAffinity: ListTileControlAffinity.leading,
+
+                        
+                        // onChanged: (bool? value) {
+                        //   setState(() {
+                        //     attachs[index]['isCompleted'] =
+                        //         value ?? false; // Cập nhật giá trị
+                        //   });
+                        // },
+                        // controlAffinity: ListTileControlAffinity.leading,
                       ),
                     );
                   },
@@ -301,11 +401,9 @@ class _DetailPageState extends State<DetailPage> {
       spacing: 5,
       children: [
         Icon(icon, size: 24, color: Colors.black),
-
         Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(width: 6),
             Text(label, style: TextStyle(fontSize: 12, color: Colors.black54)),
             Text(
               value,
@@ -321,3 +419,5 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 }
+
+
